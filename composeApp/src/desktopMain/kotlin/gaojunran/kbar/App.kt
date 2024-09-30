@@ -13,16 +13,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.platform.LocalFocusManager
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.Notification
 import androidx.compose.ui.window.rememberNotification
 import androidx.compose.ui.window.rememberTrayState
+import gaojunran.kbar.MyStyles.Companion.getMonoFontFamily
 
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -30,7 +34,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun App() {
-    val matchResult = listOf(
+    val matchResult: List<Map<String, String>> = listOf(
         mapOf("name" to "ls", "type" to "shell", "content" to "ls -l"),
         mapOf("name" to "pwd", "type" to "shell", "content" to "pwd"),
     )
@@ -38,9 +42,17 @@ fun App() {
 
     MaterialTheme {
         val text = remember { mutableStateOf("") }
+        val focusRequester = remember { FocusRequester() }
+
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
+
         Box(
             modifier = Modifier.clip(RoundedCornerShape(16.dp))
-                .fillMaxSize().background(MyStyles.surColor)
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .background(MyStyles.surColor)
                 .onPreviewKeyEvent {
                     if (it.type == KeyEventType.KeyDown) {
                         when (it.key) {
@@ -70,12 +82,15 @@ fun App() {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(modifier = Modifier.height(32.dp))
-                MainSearchBar(text, cursor)
+                MainSearchBar(text, cursor, focusRequester)
                 Spacer(modifier = Modifier.height(32.dp))
                 matchResult.forEachIndexed { index, item ->
                     MainSearchResultItem(item["name"] ?: "", item["content"] ?: "", cursor, index) {
                         println(execuateCommand(item["content"] ?: ""))
                     }
+                }
+                if (matchResult.size != 0) {
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
@@ -85,7 +100,7 @@ fun App() {
 
 
 @Composable
-fun MainSearchBar(text: MutableState<String>, cursor: MutableState<Int>) {
+fun MainSearchBar(text: MutableState<String>, cursor: MutableState<Int>, focusRequester: FocusRequester) {
     OutlinedTextField(
         value = text.value,
         onValueChange = {
@@ -98,8 +113,10 @@ fun MainSearchBar(text: MutableState<String>, cursor: MutableState<Int>) {
             .height(80.dp)
             .fillMaxWidth()
             .background(MyStyles.textFieldColor)
-            .border(2.dp, MyStyles.surColor),
-        textStyle = MaterialTheme.typography.h4.copy(color = Color.White),
+            .border(2.dp, MyStyles.surColor)
+            .focusRequester(focusRequester)
+        ,
+        textStyle = MaterialTheme.typography.h4.copy(color = Color.White, fontFamily = getMonoFontFamily()),
         singleLine = true,
     )
 }
@@ -127,9 +144,15 @@ fun MainSearchResultItem(
         Text(
             title, style = MaterialTheme.typography.h4,
             modifier = Modifier.padding(16.dp),
-            color = txtColor
+            color = txtColor,
+            fontFamily = getMonoFontFamily()
         )
     }
+}
+
+
+fun activateContent() {
+
 }
 
 fun execuateCommand(command: String): String {
@@ -144,3 +167,5 @@ fun execuateCommand(command: String): String {
         return "Error executing command: ${e.message}"
     }
 }
+
+

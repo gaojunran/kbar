@@ -1,0 +1,12 @@
+[
+  {
+    "baseUrl": "https://devapi.qweather.com/v7/weather/7d",
+    "parameters": {
+      "key": "40a9455cbcdd44578ffc909af0bffcec",
+      "location": "101044000"
+    },
+    "title": "",
+    "desc": "",
+    "allowMultipleItems": false
+  }
+]
