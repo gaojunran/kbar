@@ -35,6 +35,7 @@ kotlin {
             implementation("com.github.tulskiy:jkeymaster:1.3")
             implementation("org.slf4j:slf4j-jdk14:1.7.13")
             implementation("com.jayway.jsonpath:json-path:2.9.0")
+            implementation("com.dorkbox:SystemTray:4.4")
         }
     }
 }

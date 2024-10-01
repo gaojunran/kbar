@@ -1,39 +1,44 @@
 package gaojunran.kbar
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.input.key.*
-import androidx.compose.ui.text.style.LineHeightStyle
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.*
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
+import androidx.compose.ui.window.application
+import kotlinx.coroutines.delay
 
 fun main() = application {
-    var isVisible by remember { mutableStateOf(true) }
+    var isVisible  =  remember { mutableStateOf(true) }
+    val focusRequester = remember { FocusRequester() }
 
     Window(
-        onCloseRequest = { isVisible = false },
-        visible = isVisible,
+        onCloseRequest = { isVisible.value = false },
+        visible = isVisible.value,
         undecorated = true,
         transparent = true,
         state = WindowState(position = WindowPosition.Aligned(Alignment.Center)),
         onKeyEvent = {
             when {
                 it.type == KeyEventType.KeyDown && it.key == Key.Escape -> {
-                    isVisible = false
+                    isVisible.value = false
                     return@Window true
                 }
-
                 else -> {
                     return@Window true
                 }
             }
         },
     ) {
-        App()
+
+
+
+        App(isVisible, focusRequester)
     }
 }

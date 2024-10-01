@@ -1,14 +1,9 @@
 package gaojunran.kbar
 
 import kotlinx.serialization.Serializable
-
-
-
-enum class ActionType {
-    BROWSE,
-
-}
-
+import kotlinx.serialization.json.Json
+import java.nio.file.Files
+import java.nio.file.Paths
 
 /**
  * Accept configuration to fetch data from APIs and display on the bar.
@@ -22,7 +17,8 @@ data class ApiConfig(
     val baseUrl: String,
     val parameters: Map<String, String>? = null,
     val title: String,   // pass a template
-    val desc: String,    // pass a template
+    val desc: String? = null,    // pass a template
+    val actionURL: String? = null,  // pass a template, when the item is clicked, it'll be opened.
     val allowMultipleItems: Boolean = true,
     // If `allowMultipleItems` is true, all the results guided by JSON Path will be displayed.
     // Otherwise, only the first result will be displayed.
@@ -31,7 +27,40 @@ data class ApiConfig(
     // Authorization: <auth>
 )
 
-data class ApiResult(
-    val title: List<String>,
-    val desc: List<String>
+
+/**
+ * Accept configuration for global-scope hotkeys when the main application is running(whether focused).
+ */
+@Serializable
+data class HotkeyConfig(
+    /**
+     * The field `key` should have the following syntax:
+     *
+     *     <modifiers>* (<typedID> | <pressedReleasedID>)
+     *
+     *     modifiers := shift | control | ctrl | meta | alt | altGraph
+     *     typedID := typed <typedKey>
+     *     typedKey := string of length 1 giving Unicode character.
+     *     pressedReleasedID := (pressed | released) key
+     *     key := KeyEvent key code name, i.e. the name following "VK_".
+     *
+     * Internally the function `getKeyStroke` is used to parse the string you provide.
+     * See more information in https://docs.oracle.com/javase/8/docs/api/javax/swing/KeyStroke.html.
+     */
+    val key: String,
+    /**
+     * The `title` field is never shown in the application.
+     * Instead, it's only necessary when you need to explicitly explain what the hotkey is meant for.
+     */
+    val title: String? = null,
+    val type: String,
+    val content: String
 )
+
+fun <T> loadConfigList(path: String): List<T> {
+    val jsonString = Files.readString(Paths.get(path))
+    return Json.decodeFromString<List<T>>(jsonString)
+}
+
+
+

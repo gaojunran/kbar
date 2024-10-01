@@ -17,7 +17,7 @@ In the following versions, we will provide:
 - Quick to extend your own functions with Kotlin DSL.
 - Quick to customize your own theme.
 
-The project is built with powerful abilities of Kotlin and its community environment:
+The project is built with powerful linguistic capabilities of Kotlin and its community environment:
 
 - **Compose Desktop**. Build native desktop applications with Jetpack Compose.
 - **Ktor**. A powerful and easy-to-use HTTP client for Kotlin.

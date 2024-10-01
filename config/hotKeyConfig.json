@@ -2,6 +2,6 @@
   {
     "key": "ctrl alt shift F",
     "type": "command",
-    ""
+    "content": "echo \"Hello World\""
   }
 ]
