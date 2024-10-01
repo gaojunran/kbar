@@ -19,13 +19,7 @@ data class ApiResult(
 data class GeneralItem(
     var title: String,
     var desc: String,
-    var action: Action
-) {
-    fun update(title: String, desc: String? = null, action: Action? = null) {
-        this.title = title
-        desc?.let { this.desc = desc }
-        action?.let { this.action = action }
-    }
-}
+    var action: Action,
+)
 
 

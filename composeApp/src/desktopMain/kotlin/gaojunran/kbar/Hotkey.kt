@@ -1,6 +1,5 @@
 package gaojunran.kbar
 
-import com.tulskiy.keymaster.common.HotKeyListener
 import com.tulskiy.keymaster.common.Provider
 import javax.swing.KeyStroke
 

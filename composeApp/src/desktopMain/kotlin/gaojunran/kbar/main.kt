@@ -15,19 +15,19 @@ import androidx.compose.ui.window.application
 import kotlinx.coroutines.delay
 
 fun main() = application {
-    var isVisible  by  remember { mutableStateOf(true) }
+    var isVisible  =  remember { mutableStateOf(true) }
     val focusRequester = remember { FocusRequester() }
 
     Window(
-        onCloseRequest = { isVisible = false },
-        visible = isVisible,
+        onCloseRequest = { isVisible.value = false },
+        visible = isVisible.value,
         undecorated = true,
         transparent = true,
         state = WindowState(position = WindowPosition.Aligned(Alignment.Center)),
         onKeyEvent = {
             when {
                 it.type == KeyEventType.KeyDown && it.key == Key.Escape -> {
-                    isVisible = false
+                    isVisible.value = false
                     return@Window true
                 }
                 else -> {
@@ -37,11 +37,11 @@ fun main() = application {
         },
     ) {
 
-        App(focusRequester)
+        App(isVisible, focusRequester)
 
         LaunchedEffect(Unit){
             registerKeyLambda("alt SPACE") {
-                isVisible = !isVisible
+                isVisible.value = !isVisible.value
                 focusRequester.requestFocus()
             }
         }

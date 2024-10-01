@@ -5,10 +5,14 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -28,36 +32,26 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 @Preview
-fun App(focusRequester: FocusRequester) {
-    val matchResult = mutableListOf<GeneralItem>()
-    val cursor = mutableStateOf(remember { 0 })
+fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
+    val matchResult = remember { mutableListOf<GeneralItem>().toMutableStateList() }
+    val cursor = remember { mutableStateOf(0 ) }
 
     MaterialTheme {
         val text = remember { mutableStateOf("") }
-        val execuateThisCommandItem = GeneralItem(
-            "Execute command: ${text.value}", "",
-            Action.ExecuteCommand("echo ${text.value}")
-        )
-
-//        LaunchedEffect(Unit){
-//            registerKeyLambda("alt SPACE") {
-//                isVisible.value = !isVisible.value
-//                focusRequester.requestFocus()
-//            }
-//        }
+        val executeThisCommandItem  = remember (text) { GeneralItem(
+            "Execute command", "",
+            Action.PutToClipboard(text.value),
+//            Action.ExecuteCommand(text.value)
+        ) }
 
         LaunchedEffect(Unit) {
+            registerKeyLambda("alt SPACE") {
+                isVisible.value = !isVisible.value
+                focusRequester.requestFocus()
+            }
             focusRequester.requestFocus()
-            matchResult.add(execuateThisCommandItem)
+            matchResult.add(executeThisCommandItem)
         }
-
-        LaunchedEffect(text.value) {
-            execuateThisCommandItem.update(
-                title = "Execute command: ${text.value}",
-            )
-            println(matchResult)
-        }
-
 
         Box(
             modifier = Modifier.clip(RoundedCornerShape(16.dp))
@@ -78,7 +72,7 @@ fun App(focusRequester: FocusRequester) {
                             }
 
                             Key.Enter -> {
-                                println("Enter")
+                                matchResult[cursor.value].action.actionInvoke()
                                 return@onPreviewKeyEvent true
                             }
 
@@ -96,10 +90,16 @@ fun App(focusRequester: FocusRequester) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(modifier = Modifier.height(32.dp))
-                MainSearchBar(text, cursor, focusRequester)
+                MainSearchBar(text, cursor, focusRequester, matchResult)
                 Spacer(modifier = Modifier.height(32.dp))
-                matchResult.forEachIndexed { index, item ->
-                    MainSearchResultItem(item.title, item.desc, cursor, index) {
+
+                LazyColumn {
+                    itemsIndexed(matchResult,
+//                        key = {
+//                            _, item ->
+//                    }
+                    ) {index, item ->
+                        MainSearchResultItem(item, cursor, index)
 
                     }
                 }
@@ -114,14 +114,18 @@ fun App(focusRequester: FocusRequester) {
 
 
 @Composable
-fun MainSearchBar(text: MutableState<String>, cursor: MutableState<Int>, focusRequester: FocusRequester) {
+fun MainSearchBar(text: MutableState<String>,
+                  cursor: MutableState<Int>,
+                  focusRequester: FocusRequester,
+                  matchResult: List<GeneralItem>) {
     OutlinedTextField(
         value = text.value,
-        onValueChange = {
+        onValueChange = { it ->
             text.value = it
             println("text: $text")
             cursor.value = 0
-
+//            matchResult.filter { item -> !item.fallbackPrompt.isNullOrBlank() }
+//                .forEach { item -> item.update(text.value) }
         },
         colors = TextFieldDefaults.outlinedTextFieldColors(cursorColor = Color.White),
         modifier = Modifier
@@ -139,11 +143,9 @@ fun MainSearchBar(text: MutableState<String>, cursor: MutableState<Int>, focusRe
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun MainSearchResultItem(
-    title: String,
-    description: String,
+    item: GeneralItem,
     cursor: MutableState<Int>,
     index: Int,
-    onClick: () -> Unit
 ) {
 //    var hoverActive by remember { mutableStateOf(false) }
     val bgColor by animateColorAsState(if (cursor.value == index) MaterialTheme.colors.primary else MyStyles.surColor)
@@ -151,21 +153,19 @@ fun MainSearchResultItem(
     Card(modifier = Modifier
         .clip(RoundedCornerShape(16.dp))
         .fillMaxWidth()
-        .onClick { onClick() }
+        .onClick { item.action.actionInvoke() }
         .onPointerEvent(PointerEventType.Enter) { cursor.value = index }
         .onPointerEvent(PointerEventType.Exit) { },
         backgroundColor = bgColor
     ) {
         Text(
-            title, style = MaterialTheme.typography.h4,
+            item.title, style = MaterialTheme.typography.h4,
             modifier = Modifier.padding(16.dp),
             color = txtColor,
             fontFamily = getMonoFontFamily()
         )
     }
 }
-
-
 
 
 

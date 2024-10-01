@@ -87,5 +87,11 @@ sealed class Action(val content: String) {
         }
     }
 
+    class Lambda(private val action: () -> Unit) : Action("lambda") {
+        override fun actionInvoke() {
+            action()
+        }
+    }
+
 
 }
