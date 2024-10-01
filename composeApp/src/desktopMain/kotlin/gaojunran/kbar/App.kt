@@ -26,10 +26,9 @@ import gaojunran.kbar.MyStyles.Companion.getMonoFontFamily
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 @Preview
-fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
+fun App(focusRequester: FocusRequester) {
     val matchResult = mutableListOf<GeneralItem>()
     val cursor = mutableStateOf(remember { 0 })
 
@@ -40,12 +39,12 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
             Action.ExecuteCommand("echo ${text.value}")
         )
 
-        LaunchedEffect(Unit){
-            registerKeyLambda("alt SPACE") {
-                isVisible.value = !isVisible.value
-                focusRequester.requestFocus()
-            }
-        }
+//        LaunchedEffect(Unit){
+//            registerKeyLambda("alt SPACE") {
+//                isVisible.value = !isVisible.value
+//                focusRequester.requestFocus()
+//            }
+//        }
 
         LaunchedEffect(Unit) {
             focusRequester.requestFocus()
