@@ -44,7 +44,9 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
         val fieldText = remember { mutableStateOf("") }
         val debugThisItem = GeneralItem(
             "[Debug]",
-            Action.Lambda { focusRequester.requestFocus() },
+            Action.Lambda {
+                isVisible.value = !isVisible.value
+            },
         )
         val executeThisCommandItem = GeneralItem(
             "[Execute this command]",
@@ -72,15 +74,14 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
             // request focus to text field
             focusRequester.requestFocus()
 
-            // TODO: add some items
-            matchResult.add(executeThisCommandItem)
-            matchResult.add(debugThisItem)
         }
 
         LaunchedEffect(fieldText.value){
             // putting searching action into LaunchedEffect to avoid stuffing mainThread
             matchResult.clear()
             matchResult.addAll(search(fieldText.value))
+            matchResult.add(executeThisCommandItem)
+            matchResult.add(debugThisItem)
         }
 
         Box(

@@ -5,10 +5,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.awt.Desktop
+import java.awt.Robot
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.StringSelection
 import java.net.URI
+import javax.swing.KeyStroke
 
 sealed class Action(
     var content: String,
@@ -25,15 +27,16 @@ sealed class Action(
                 "folder" -> OpenFolder(content)
                 "clipboard" -> PutToClipboard(content)
                 "python" -> RunPythonScript(content)
-//                "hotkey" -> SendHotkey(content)
+                "hotkey" -> SendHotkey(content)
                 "debug" -> Debug(content)
                 else -> Lambda {
                     content.displayInDialog("Unknown Action Type $type")
                 }
             }
         }
-        fun fromTable(type: Int, content: String): Action{
-            return when(type){
+
+        fun fromTable(type: Int, content: String): Action {
+            return when (type) {
                 1 -> BrowseUrl(content)
                 2 -> ExecuteCommand(content)
                 3 -> OpenFile(content)
@@ -45,7 +48,7 @@ sealed class Action(
                 else -> Lambda {
                     content.displayInDialog("Unknown Action Type $type")
                 }
-           }
+            }
         }
     }
 
@@ -77,9 +80,7 @@ sealed class Action(
                     val output = process.inputStream.bufferedReader().readText()
                     process.waitFor()
                     output.displayInDialog(isMultipleLine = true)
-//                return output
                 } catch (e: Exception) {
-//                return "Error executing command: ${e.message}"
                     "Error executing command: ${e.message}".displayInDialog(isMultipleLine = true)
                 }
             }
@@ -124,15 +125,53 @@ sealed class Action(
         }
     }
 
-//    class SendHotkey(hotkey: String, hotkeyState: MutableState<String>? = null) : Action(hotkey, hotkeyState) {
-//        companion object{
-//            val robot = Robot()
-//        }
-//
-//        override fun actionInvoke() {
-//            robot.keyPress(KeyStroke.getKeyStroke(content).keyCode)
-//        }
-//    }
+    class SendHotkey(
+        hotkey: String,
+        hotkeyState: MutableState<String>? = null,
+        private val isVisible: MutableState<Boolean>? = null  // only pass when you need to hide the window
+    ) : Action(hotkey, hotkeyState, 7, "hotkey") {
+
+        companion object {
+            val robot = Robot()
+        }
+
+        override fun actionInvoke() {
+
+            isVisible?.let { it.value = false }
+
+            val hotkey = KeyStroke.getKeyStroke(content)
+            val keyCode = hotkey.keyCode
+            val modifiers = hotkey.modifiers
+
+            when {
+                modifiers and java.awt.event.InputEvent.CTRL_DOWN_MASK != 0 -> {
+                    robot.keyPress(java.awt.event.KeyEvent.VK_CONTROL)
+                    robot.keyPress(keyCode)
+                    robot.keyRelease(keyCode)
+                    robot.keyRelease(java.awt.event.KeyEvent.VK_CONTROL)
+                }
+
+                modifiers and java.awt.event.InputEvent.SHIFT_DOWN_MASK != 0 -> {
+                    robot.keyPress(java.awt.event.KeyEvent.VK_SHIFT)
+                    robot.keyPress(keyCode)
+                    robot.keyRelease(keyCode)
+                    robot.keyRelease(java.awt.event.KeyEvent.VK_SHIFT)
+                }
+
+                modifiers and java.awt.event.InputEvent.ALT_DOWN_MASK != 0 -> {
+                    robot.keyPress(java.awt.event.KeyEvent.VK_ALT)
+                    robot.keyPress(keyCode)
+                    robot.keyRelease(keyCode)
+                    robot.keyRelease(java.awt.event.KeyEvent.VK_ALT)
+                }
+
+                else -> {
+                    robot.keyPress(keyCode)
+                    robot.keyRelease(keyCode)
+                }
+            }
+        }
+    }
 
     class Debug(message: String, messageState: MutableState<String>? = null) :
         Action(message, messageState, -1, "debug") {

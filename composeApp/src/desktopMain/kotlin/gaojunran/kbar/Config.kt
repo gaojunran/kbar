@@ -29,7 +29,7 @@ data class ApiConfig(
 
 
 /**
- * Accept configuration for global-scope hotkeys when the main application is running(whether focused).
+ * Accept configuration for global-scope hotkeys whether the application is shown or not.
  */
 @Serializable
 data class HotkeyConfig(
