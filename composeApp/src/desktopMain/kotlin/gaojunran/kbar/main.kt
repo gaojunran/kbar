@@ -3,10 +3,7 @@ package gaojunran.kbar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
@@ -30,6 +27,10 @@ fun main() = application {
                     isVisible.value = false
                     return@Window true
                 }
+                it.type == KeyEventType.KeyDown && it.key == Key.Tab && it.isCtrlPressed && it.isShiftPressed -> {
+                    focusRequester.requestFocus()
+                    return@Window true
+                }
                 else -> {
                     return@Window true
                 }
@@ -39,11 +40,12 @@ fun main() = application {
 
         App(isVisible, focusRequester)
 
-        LaunchedEffect(Unit){
-            registerKeyLambda("alt SPACE") {
-                isVisible.value = !isVisible.value
-                focusRequester.requestFocus()
-            }
-        }
+//        LaunchedEffect(Unit){
+//            registerKeyLambda("alt SPACE") {
+//                isVisible.value = !isVisible.value
+//                focusRequester.requestFocus()
+//            }
+//        }
     }
 }
+

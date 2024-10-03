@@ -27,30 +27,42 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.unit.dp
 import gaojunran.kbar.MyStyles.Companion.getMonoFontFamily
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import java.awt.Window
 
 
 @Composable
 @Preview
 fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
     val matchResult = remember { mutableListOf<GeneralItem>().toMutableStateList() }
-    val cursor = remember { mutableStateOf(0 ) }
+    val cursor = remember { mutableStateOf(0) }
 
     MaterialTheme {
         val text = remember { mutableStateOf("") }
-        val executeThisCommandItem  = remember (text) { GeneralItem(
-            "Execute command", "",
-            Action.PutToClipboard(text.value),
-//            Action.ExecuteCommand(text.value)
-        ) }
+        val debugThisItem = GeneralItem(
+            "[Debug]",
+            Action.Debug(message = "", messageState = text),
+        )
+        val executeThisCommandItem = GeneralItem(
+            "[Execute this command]",
+            Action.ExecuteCommand(command = "", commandState = text)
+        )
 
         LaunchedEffect(Unit) {
+            initSqlite()
             registerKeyLambda("alt SPACE") {
                 isVisible.value = !isVisible.value
-                focusRequester.requestFocus()
+//                launch {
+//                    delay(1000)
+//                    sendFocusKey()
+//                }
+//                focusRequester.requestFocus()
             }
             focusRequester.requestFocus()
             matchResult.add(executeThisCommandItem)
+            matchResult.add(debugThisItem)
         }
 
         Box(
@@ -62,17 +74,26 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
                     if (it.type == KeyEventType.KeyDown) {
                         when (it.key) {
                             Key.DirectionDown -> {
-                                cursor.value++
+                                if (cursor.value < matchResult.size - 1) {
+                                    cursor.value++
+                                }
                                 return@onPreviewKeyEvent true
                             }
 
                             Key.DirectionUp -> {
-                                cursor.value--
+                                if (cursor.value > 0) {
+                                    cursor.value--
+                                }
                                 return@onPreviewKeyEvent true
                             }
 
                             Key.Enter -> {
-                                matchResult[cursor.value].action.actionInvoke()
+                                matchResult[cursor.value].action.invoke()
+                                return@onPreviewKeyEvent true
+                            }
+
+                            Key.NumPadEnter -> {
+                                matchResult[cursor.value].action.invoke()
                                 return@onPreviewKeyEvent true
                             }
 
@@ -95,10 +116,10 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
 
                 LazyColumn {
                     itemsIndexed(matchResult,
-//                        key = {
-//                            _, item ->
-//                    }
-                    ) {index, item ->
+                        key = { _, item ->
+                            item.hashCode()
+                        }
+                    ) { index, item ->
                         MainSearchResultItem(item, cursor, index)
 
                     }
@@ -114,18 +135,20 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
 
 
 @Composable
-fun MainSearchBar(text: MutableState<String>,
-                  cursor: MutableState<Int>,
-                  focusRequester: FocusRequester,
-                  matchResult: List<GeneralItem>) {
+fun MainSearchBar(
+    text: MutableState<String>,
+    cursor: MutableState<Int>,
+    focusRequester: FocusRequester,
+    matchResult: SnapshotStateList<GeneralItem>
+) {
     OutlinedTextField(
         value = text.value,
         onValueChange = { it ->
             text.value = it
-            println("text: $text")
+//            println("text: $text")
             cursor.value = 0
-//            matchResult.filter { item -> !item.fallbackPrompt.isNullOrBlank() }
-//                .forEach { item -> item.update(text.value) }
+            matchResult.clear()
+            matchResult.addAll(search(text.value))
         },
         colors = TextFieldDefaults.outlinedTextFieldColors(cursorColor = Color.White),
         modifier = Modifier
@@ -153,13 +176,13 @@ fun MainSearchResultItem(
     Card(modifier = Modifier
         .clip(RoundedCornerShape(16.dp))
         .fillMaxWidth()
-        .onClick { item.action.actionInvoke() }
+        .onClick { item.action.invoke() }
         .onPointerEvent(PointerEventType.Enter) { cursor.value = index }
         .onPointerEvent(PointerEventType.Exit) { },
         backgroundColor = bgColor
     ) {
         Text(
-            item.title, style = MaterialTheme.typography.h4,
+            item.keyword, style = MaterialTheme.typography.h4,
             modifier = Modifier.padding(16.dp),
             color = txtColor,
             fontFamily = getMonoFontFamily()
@@ -167,6 +190,12 @@ fun MainSearchResultItem(
     }
 }
 
+fun focusWindow() {
+    println(Window.getWindows().toList())
+}
 
+fun main() {
+    focusWindow()
+}
 
 

@@ -1,78 +1,114 @@
 package gaojunran.kbar
 
+import androidx.compose.runtime.MutableState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.StringSelection
 import java.net.URI
 
-sealed class Action(val content: String) {
+sealed class Action(
+    var content: String,
+    private val contentState: MutableState<String>? = null,
+    val typeValue: Int,
+    val typeName: String
+) {
     companion object {
         fun fromConfig(type: String, content: String): Action {
-            when (type) {
-                "browse" -> return BrowseUrl(content)
-                "command" -> return ExecuteCommand(content)
-                "file" -> return OpenFile(content)
-                "folder" -> return OpenFolder(content)
-                "clipboard" -> return PutToClipboard(content)
-                "python" -> return RunPythonScript(content)
+            return when (type) {
+                "browse" -> BrowseUrl(content)
+                "command" -> ExecuteCommand(content)
+                "file" -> OpenFile(content)
+                "folder" -> OpenFolder(content)
+                "clipboard" -> PutToClipboard(content)
+                "python" -> RunPythonScript(content)
+//                "hotkey" -> SendHotkey(content)
+                "debug" -> Debug(content)
+                else -> Lambda {
+                    content.displayInDialog("Unknown Action Type $type")
+                }
             }
-            return ExecuteCommand("")
+        }
+        fun fromTable(type: Int, content: String): Action{
+            return when(type){
+                1 -> BrowseUrl(content)
+                2 -> ExecuteCommand(content)
+                3 -> OpenFile(content)
+                4 -> OpenFolder(content)
+                5 -> PutToClipboard(content)
+                6 -> RunPythonScript(content)
+//                7 -> SendHotkey(content)
+                -1 -> Debug(content)
+                else -> Lambda {
+                    content.displayInDialog("Unknown Action Type $type")
+                }
+           }
         }
     }
 
     abstract fun actionInvoke()
+    fun invoke() {
+        contentState?.value?.let { content = it }
+        actionInvoke()
+    }
 
-
-    class BrowseUrl(private val url: String) : Action(url) {
-        companion object{
+    class BrowseUrl(url: String, urlState: MutableState<String>? = null) : Action(url, urlState, 1, "browse") {
+        companion object {
             val desktop: Desktop = Desktop.getDesktop()
         }
+
         override fun actionInvoke() {
-            desktop.browse(URI(url))
+            desktop.browse(URI(content))
         }
 
     }
 
-    class ExecuteCommand(private val command: String) : Action(command) {
+    class ExecuteCommand(command: String, commandState: MutableState<String>? = null) :
+        Action(command, commandState, 2, "command") {
         override fun actionInvoke() {
-            try {
-                val process = ProcessBuilder(*command.split(" ").toTypedArray())
-                    .redirectErrorStream(true)
-                    .start()
-                val output = process.inputStream.bufferedReader().readText()
-                process.waitFor()
-                output.displayInDialog()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val process = ProcessBuilder(*content.split(" ").toTypedArray())
+                        .redirectErrorStream(true)
+                        .start()
+                    val output = process.inputStream.bufferedReader().readText()
+                    process.waitFor()
+                    output.displayInDialog(isMultipleLine = true)
 //                return output
-            } catch (e: Exception) {
+                } catch (e: Exception) {
 //                return "Error executing command: ${e.message}"
-                "Error executing command: ${e.message}".displayInDialog()
+                    "Error executing command: ${e.message}".displayInDialog(isMultipleLine = true)
+                }
             }
         }
 
     }
 
-    class OpenFile(val path: String) : Action(path) {
+    class OpenFile(path: String, pathState: MutableState<String>? = null) : Action(path, pathState, 3, "file") {
         override fun actionInvoke() {
             TODO("Not yet implemented")
         }
 
     }
 
-    class OpenFolder(val path: String) : Action(path) {
+    class OpenFolder(path: String, pathState: MutableState<String>? = null) : Action(path, pathState, 4, "folder") {
         override fun actionInvoke() {
             TODO("Not yet implemented")
         }
 
     }
 
-    class PutToClipboard(val text: String) : Action(text) {
+    class PutToClipboard(text: String, textState: MutableState<String>? = null) :
+        Action(text, textState, 5, "clipboard") {
         companion object {
             val clipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
         }
 
         override fun actionInvoke() {
-            val selection = StringSelection(text)
+            val selection = StringSelection(content)
             clipboard.setContents(selection, null)
         }
     }
@@ -81,13 +117,31 @@ sealed class Action(val content: String) {
     /**
      *
      */
-    class RunPythonScript(val path: String) : Action(path) {
+    class RunPythonScript(path: String, pathState: MutableState<String>? = null) :
+        Action(path, pathState, 6, "python") {
         override fun actionInvoke() {
-            ExecuteCommand("python $path").actionInvoke()
+            ExecuteCommand("python $content").actionInvoke()
         }
     }
 
-    class Lambda(private val action: () -> Unit) : Action("lambda") {
+//    class SendHotkey(hotkey: String, hotkeyState: MutableState<String>? = null) : Action(hotkey, hotkeyState) {
+//        companion object{
+//            val robot = Robot()
+//        }
+//
+//        override fun actionInvoke() {
+//            robot.keyPress(KeyStroke.getKeyStroke(content).keyCode)
+//        }
+//    }
+
+    class Debug(message: String, messageState: MutableState<String>? = null) :
+        Action(message, messageState, -1, "debug") {
+        override fun actionInvoke() {
+            content.displayInDialog("Debugging...", isMultipleLine = true)
+        }
+    }
+
+    class Lambda(val action: () -> Unit) : Action("", null, 0, "lambda") {
         override fun actionInvoke() {
             action()
         }

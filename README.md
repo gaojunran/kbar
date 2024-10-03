@@ -22,4 +22,4 @@ The project is built with powerful linguistic capabilities of Kotlin and its com
 - **Compose Desktop**. Build native desktop applications with Jetpack Compose.
 - **Ktor**. A powerful and easy-to-use HTTP client for Kotlin.
 - **Kotlin DSL**. Write Kotlin code to build your opinionated application.
-
+- **Exposed**. A smart SQL client for Kotlin.

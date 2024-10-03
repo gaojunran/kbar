@@ -8,7 +8,7 @@ data class ApiResult(
     fun toGeneralItemList(): List<GeneralItem> {
         return title.zip(desc).zip(actionURL).map {
             GeneralItem(
-                title = it.first.first,
+                keyword = it.first.first,
                 desc = it.first.second,
                 action = Action.BrowseUrl(it.second)
             )
@@ -17,9 +17,17 @@ data class ApiResult(
 }
 
 data class GeneralItem(
+    var keyword: String,
+    var action: Action = Action.Lambda{},
     var title: String,
-    var desc: String,
-    var action: Action,
-)
+    var desc: String? = null,
+    var category: Category = Category.None
+){
+    constructor(keyword: String, action: Action):
+            this(keyword = keyword, action = action, title = keyword, desc = "")
+
+    constructor(keyword: String, action: Action, desc: String):
+            this(keyword = keyword, action = action, title = keyword, desc = desc)
+}
 
 

@@ -1,3 +1,4 @@
+import org.gradle.internal.impldep.com.fasterxml.jackson.core.JsonPointer.compile
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 val ktor_version: String by project
@@ -36,6 +37,9 @@ kotlin {
             implementation("org.slf4j:slf4j-jdk14:1.7.13")
             implementation("com.jayway.jsonpath:json-path:2.9.0")
             implementation("com.dorkbox:SystemTray:4.4")
+            implementation(libs.exposed.core)
+            implementation(libs.exposed.jdbc)
+            implementation("org.xerial:sqlite-jdbc:3.46.1.3")
         }
     }
 }
@@ -52,3 +56,4 @@ compose.desktop {
         }
     }
 }
+
