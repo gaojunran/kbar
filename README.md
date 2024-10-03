@@ -1,5 +1,9 @@
 # Kbar
 
+## Notice
+
+⚠️ Still actively developing, not ready for use.
+
 ## Description
 
 Kbar is A cross-platform **launch bar** written in Kotlin Multiplatform, 
