@@ -24,3 +24,9 @@ class MyStyles {
         }
     }
 }
+
+class MyKeys{
+    companion object{
+        const val ALT_SPACE = "alt SPACE"
+    }
+}

@@ -12,7 +12,7 @@ import androidx.compose.ui.window.application
 import kotlinx.coroutines.delay
 
 fun main() = application {
-    var isVisible  =  remember { mutableStateOf(true) }
+    val isVisible  =  remember { mutableStateOf(true) }
     val focusRequester = remember { FocusRequester() }
 
     Window(

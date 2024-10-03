@@ -57,9 +57,9 @@ data class HotkeyConfig(
     val content: String
 )
 
-fun <T> loadConfigList(path: String): List<T> {
+inline fun <reified T> loadConfigList(path: String): List<T> {
     val jsonString = Files.readString(Paths.get(path))
-    return Json.decodeFromString<List<T>>(jsonString)
+    return Json.decodeFromString(jsonString)
 }
 
 

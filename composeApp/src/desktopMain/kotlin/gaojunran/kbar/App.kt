@@ -23,8 +23,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import gaojunran.kbar.MyStyles.Companion.getMonoFontFamily
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Window
 
@@ -34,28 +37,50 @@ import java.awt.Window
 fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
     val matchResult = remember { mutableListOf<GeneralItem>().toMutableStateList() }
     val cursor = remember { mutableStateOf(0) }
+    val focusManager = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
 
     MaterialTheme {
-        val text = remember { mutableStateOf("") }
+        val fieldText = remember { mutableStateOf("") }
         val debugThisItem = GeneralItem(
             "[Debug]",
             Action.Lambda { focusRequester.requestFocus() },
         )
         val executeThisCommandItem = GeneralItem(
             "[Execute this command]",
-            Action.ExecuteCommand(command = "", commandState = text)
+            Action.ExecuteCommand(command = "", commandState = fieldText)
         )
 
+        // Running only once at the beginning
         LaunchedEffect(Unit) {
+            // init the connection to sqlite
             initSqlite()
-            println(Window.getWindows().toList())
-            registerKeyLambda("alt SPACE") {
+
+            // register the show/hide hotkey and other hotkeys
+            registerKeyLambda(MyKeys.ALT_SPACE) {
                 isVisible.value = !isVisible.value
-                focusAgain(focusRequester)
+                // Thank you: https://stackoverflow.com/questions/74391260/jetpack-compose-requestfocus-works-only-once
+                scope.launch {
+                    focusManager.clearFocus(true)
+                    delay(100)
+                    focusRequester.requestFocus()
+                }
+                fieldText.value = ""
             }
+            registerKeys(loadConfigList("../config/hotKeyConfig.json"))
+
+            // request focus to text field
             focusRequester.requestFocus()
+
+            // TODO: add some items
             matchResult.add(executeThisCommandItem)
             matchResult.add(debugThisItem)
+        }
+
+        LaunchedEffect(fieldText.value){
+            // putting searching action into LaunchedEffect to avoid stuffing mainThread
+            matchResult.clear()
+            matchResult.addAll(search(fieldText.value))
         }
 
         Box(
@@ -81,12 +106,12 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
                             }
 
                             Key.Enter -> {
-                                matchResult[cursor.value].action.invoke()
+                                if (matchResult.size != 0) matchResult[cursor.value].action.invoke()
                                 return@onPreviewKeyEvent true
                             }
 
                             Key.NumPadEnter -> {
-                                matchResult[cursor.value].action.invoke()
+                                if (matchResult.size != 0) matchResult[cursor.value].action.invoke()
                                 return@onPreviewKeyEvent true
                             }
 
@@ -104,7 +129,7 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(modifier = Modifier.height(32.dp))
-                MainSearchBar(text, cursor, focusRequester, matchResult)
+                MainSearchBar(fieldText, cursor, focusRequester, matchResult)
                 Spacer(modifier = Modifier.height(32.dp))
 
                 LazyColumn {
@@ -122,8 +147,8 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
                 }
             }
         }
-
     }
+
 }
 
 
@@ -132,16 +157,15 @@ fun MainSearchBar(
     text: MutableState<String>,
     cursor: MutableState<Int>,
     focusRequester: FocusRequester,
-    matchResult: SnapshotStateList<GeneralItem>
+    matchResult: SnapshotStateList<GeneralItem>,
 ) {
     OutlinedTextField(
         value = text.value,
-        onValueChange = { it ->
+        onValueChange = {
             text.value = it
-//            println("text: $text")
+            println("text: $text")
             cursor.value = 0
-            matchResult.clear()
-            matchResult.addAll(search(text.value))
+
         },
         colors = TextFieldDefaults.outlinedTextFieldColors(cursorColor = Color.White),
         modifier = Modifier
@@ -181,12 +205,6 @@ fun MainSearchResultItem(
             fontFamily = getMonoFontFamily()
         )
     }
-}
-
-fun focusAgain(focusRequester: FocusRequester) {
-    Thread.sleep(100)
-    Window.getWindows().toList().find { it is ComposeWindow && it.title == "kbar" }?.requestFocus()
-    focusRequester.requestFocus()
 }
 
 
