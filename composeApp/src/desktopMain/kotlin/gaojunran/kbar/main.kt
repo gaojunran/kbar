@@ -20,7 +20,8 @@ fun main() = application {
         visible = isVisible.value,
         undecorated = true,
         transparent = true,
-        state = WindowState(position = WindowPosition.Aligned(Alignment.Center)),
+        title = "kbar",
+        state = WindowState(position = WindowPosition.Aligned(Alignment.Center), ),
         onKeyEvent = {
             when {
                 it.type == KeyEventType.KeyDown && it.key == Key.Escape -> {

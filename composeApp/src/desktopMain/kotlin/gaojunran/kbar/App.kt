@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,19 +15,16 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.unit.dp
 import gaojunran.kbar.MyStyles.Companion.getMonoFontFamily
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Window
 
@@ -43,7 +39,7 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
         val text = remember { mutableStateOf("") }
         val debugThisItem = GeneralItem(
             "[Debug]",
-            Action.Debug(message = "", messageState = text),
+            Action.Lambda { focusRequester.requestFocus() },
         )
         val executeThisCommandItem = GeneralItem(
             "[Execute this command]",
@@ -52,13 +48,10 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
 
         LaunchedEffect(Unit) {
             initSqlite()
+            println(Window.getWindows().toList())
             registerKeyLambda("alt SPACE") {
                 isVisible.value = !isVisible.value
-//                launch {
-//                    delay(1000)
-//                    sendFocusKey()
-//                }
-//                focusRequester.requestFocus()
+                focusAgain(focusRequester)
             }
             focusRequester.requestFocus()
             matchResult.add(executeThisCommandItem)
@@ -190,12 +183,11 @@ fun MainSearchResultItem(
     }
 }
 
-fun focusWindow() {
-    println(Window.getWindows().toList())
+fun focusAgain(focusRequester: FocusRequester) {
+    Thread.sleep(100)
+    Window.getWindows().toList().find { it is ComposeWindow && it.title == "kbar" }?.requestFocus()
+    focusRequester.requestFocus()
 }
 
-fun main() {
-    focusWindow()
-}
 
 
