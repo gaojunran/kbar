@@ -57,9 +57,9 @@ sealed class Action(
 
     abstract fun actionInvoke()
     fun invoke() {
-        content = contentState?.value?.let {
-            content.replace("{}", it)
-        } ?: content
+//        content = contentState?.value?.let {
+//            content.replace("{}", it)
+//        } ?: content
         actionInvoke()
     }
 

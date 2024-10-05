@@ -3,4 +3,10 @@
   "title": "[Evaluate {} with Python]",
   "type": "python",
   "content": "script/calculation.py {}"
-}]
+},
+  {
+    "keyword": "{}",
+    "title": "[Execute this command]",
+    "type": "command",
+    "content": "{}"
+  }]

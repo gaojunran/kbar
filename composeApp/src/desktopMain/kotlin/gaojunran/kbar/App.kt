@@ -11,7 +11,6 @@ import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -24,6 +23,9 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogWindow
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.rememberDialogState
 import gaojunran.kbar.MyStyles.Companion.getMonoFontFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -33,10 +35,21 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
+    var isDialogOpen by remember { mutableStateOf(false) }
     val matchResult = remember { mutableListOf<GeneralItem>().toMutableStateList() }
     val cursor = remember { mutableStateOf(0) }
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
+
+    if (isDialogOpen) {
+        DialogWindow(
+            onCloseRequest = { isDialogOpen = false },
+            state = rememberDialogState(position = WindowPosition(Alignment.Center)),
+        ) {
+            Text("Debug")
+        }
+    }
+
 
     MaterialTheme {
         val fieldText = remember { mutableStateOf("") }
@@ -46,19 +59,6 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
                 isVisible.value = !isVisible.value
             },
         )
-        val executeThisCommandItem = GeneralItem(
-            "[Execute this command]",
-            Action.ExecuteCommand(command = "{}", commandState = fieldText)
-        )
-        val evalInPythonItem = GeneralItem(
-            "[Evaluate in Python]",
-            Action.RunPythonScript(path = "script/calculation.py {}", pathState = fieldText)
-        )
-
-//        val searchThisWordItem = GeneralItem(
-//            "[Search this word]",
-//
-//        )
 
         // Running only once at the beginning
         LaunchedEffect(Unit) {
@@ -86,14 +86,13 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
             insertBatch(loadConfigList<NormalConfig>("config/normalConfig.json").map { it.toGeneralItem() })
         }
 
-        LaunchedEffect(fieldText.value){
+        LaunchedEffect(fieldText.value) {
             // putting searching action into LaunchedEffect to avoid stuffing mainThread
             matchResult.clear()
             if (fieldText.value.isNotBlank()) {
                 matchResult.addAll(
                     searchDynamic(fieldText.value)
                 )
-                matchResult.add(executeThisCommandItem)
                 matchResult.add(debugThisItem)
             }
         }
@@ -144,17 +143,11 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(modifier = Modifier.height(32.dp))
-                MainSearchBar(fieldText, cursor, focusRequester, matchResult)
+                MainSearchBar(fieldText, cursor, focusRequester)
                 Spacer(modifier = Modifier.height(32.dp))
-
                 LazyColumn {
-                    itemsIndexed(matchResult,
-                        key = { _, item ->
-                            item.hashCode()
-                        }
-                    ) { index, item ->
+                    itemsIndexed(matchResult, key = { _, item -> item.hashCode() }) { index, item ->
                         MainSearchResultItem(item, cursor, index)
-
                     }
                 }
                 if (matchResult.size != 0) {
@@ -172,15 +165,12 @@ fun MainSearchBar(
     text: MutableState<String>,
     cursor: MutableState<Int>,
     focusRequester: FocusRequester,
-    matchResult: SnapshotStateList<GeneralItem>,
 ) {
     OutlinedTextField(
         value = text.value,
         onValueChange = {
             text.value = it
-            println("text: $text")
             cursor.value = 0
-
         },
         colors = TextFieldDefaults.outlinedTextFieldColors(cursorColor = Color.White),
         modifier = Modifier
@@ -202,7 +192,6 @@ fun MainSearchResultItem(
     cursor: MutableState<Int>,
     index: Int,
 ) {
-//    var hoverActive by remember { mutableStateOf(false) }
     val bgColor by animateColorAsState(if (cursor.value == index) MaterialTheme.colors.primary else MyStyles.surColor)
     val txtColor by animateColorAsState(if (cursor.value == index) Color.White else Color.White)
     Card(modifier = Modifier
@@ -221,6 +210,3 @@ fun MainSearchResultItem(
         )
     }
 }
-
-
-
