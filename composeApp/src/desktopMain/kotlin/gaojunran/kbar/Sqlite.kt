@@ -1,9 +1,6 @@
 package gaojunran.kbar
 
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun initSqlite() {
@@ -13,24 +10,12 @@ fun initSqlite() {
         System.err.println("Could not init JDBC driver - driver not found");
     }
 
-    Database.connect("jdbc:sqlite:../data/items.db", "org.sqlite.JDBC")
+    Database.connect("jdbc:sqlite:data/items.db", "org.sqlite.JDBC")
 }
 
 fun main() {
-   initSqlite()
-//    transaction {
-//        SchemaUtils.create(GeneralMatch)
-//        val itemId = GeneralMatch.insert {
-//            it[keyword] = "keyword"
-//            it[title] = "title"
-//            it[desc] = "desc"
-//            it[category] = Category.Api.value
-//            it[type] = 0
-//            it[content] = "content"
-//        } get GeneralMatch.id
-//        println(itemId)
-//    }
-    val generalItems = search("ke")
+    initSqlite()
+    val generalItems = searchDynamic("ke")
     println(generalItems)
 }
 
@@ -56,17 +41,36 @@ fun insertBatch(generalItems: List<GeneralItem>) = transaction {
     }
 }
 
-fun search(keyword: String): List<GeneralItem> {
+fun searchDynamic(keyword: String): List<GeneralItem> {
+    // Use CustomFunction to support REPLACE of SQLite
+    val patternColumn =
+        CustomFunction("REPLACE", TextColumnType(), GeneralMatch.keyword, stringParam("{}"), stringParam("%"))
     return transaction {
-        GeneralMatch.selectAll().where { GeneralMatch.keyword.like("%$keyword%") }.map {
+        GeneralMatch.selectAll().where {
+            /*
+                To match the following infix method in Exposed:
+                infix fun <T : String?> Expression<T>.like(expression: ExpressionWithColumnType<String>): LikeEscapeOp = LikeEscapeOp(this, expression, true, null)
+             */
+            stringParam(keyword) like patternColumn
+        }.limit(30).map {
+            /* `replacer` depends on different patterns, so it's mutually different.
+               `it[GeneralMatch.keyword]`  :: eval {}
+               `keyword`                   :: eval 1+1
+               `replacer` should get       :: 1+1
+             */
+            val prefix = it[GeneralMatch.keyword].replace("{}", "")
+            val replacer = keyword.replace(prefix, "")
             GeneralItem(
                 keyword = it[GeneralMatch.keyword],
                 title = it[GeneralMatch.title],
                 desc = it[GeneralMatch.desc],
                 category = Category.fromTable(it[GeneralMatch.category]),
                 action = Action.fromTable(it[GeneralMatch.type], it[GeneralMatch.content])
-            )
+            ).toDynamicItem(replacer)
         }
     }
 }
 
+fun clearTable() = transaction {
+    GeneralMatch.deleteAll()
+}

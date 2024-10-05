@@ -18,6 +18,7 @@ sealed class Action(
     val typeValue: Int,
     val typeName: String
 ) {
+
     companion object {
         fun fromConfig(type: String, content: String): Action {
             return when (type) {
@@ -50,12 +51,21 @@ sealed class Action(
                 }
             }
         }
+
+
     }
 
     abstract fun actionInvoke()
     fun invoke() {
-        contentState?.value?.let { content = it }
+        content = contentState?.value?.let {
+            content.replace("{}", it)
+        } ?: content
         actionInvoke()
+    }
+
+    fun toDynamicAction(replacer: String): Action {
+        this.content = this.content.replace("{}", replacer)
+        return this
     }
 
     class BrowseUrl(url: String, urlState: MutableState<String>? = null) : Action(url, urlState, 1, "browse") {
@@ -69,23 +79,22 @@ sealed class Action(
 
     }
 
-    class ExecuteCommand(command: String, commandState: MutableState<String>? = null) :
+    class ExecuteCommand(command: String, commandState: MutableState<String>? = null,
+                         private val isDisplayDialog: Boolean = true) :
         Action(command, commandState, 2, "command") {
         override fun actionInvoke() {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val process = ProcessBuilder(*content.split(" ").toTypedArray())
-                        .redirectErrorStream(true)
-                        .start()
-                    val output = process.inputStream.bufferedReader().readText()
-                    process.waitFor()
-                    output.displayInDialog(isMultipleLine = true)
+                    Runtime.getRuntime().exec(content.split(" ").toTypedArray<String>()).apply {
+                        val output = inputStream.bufferedReader().readText() + "\n" + errorStream.bufferedReader().readText()
+                        waitFor()
+                        if (isDisplayDialog) output.displayInDialog(isMultipleLine = true)
+                    }
                 } catch (e: Exception) {
                     "Error executing command: ${e.message}".displayInDialog(isMultipleLine = true)
                 }
             }
         }
-
     }
 
     class OpenFile(path: String, pathState: MutableState<String>? = null) : Action(path, pathState, 3, "file") {
@@ -121,9 +130,11 @@ sealed class Action(
     class RunPythonScript(path: String, pathState: MutableState<String>? = null) :
         Action(path, pathState, 6, "python") {
         override fun actionInvoke() {
-            ExecuteCommand("python $content").actionInvoke()
+            ExecuteCommand("python3 $content").actionInvoke()
         }
     }
+
+
 
     class SendHotkey(
         hotkey: String,

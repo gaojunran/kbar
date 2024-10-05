@@ -28,6 +28,16 @@ data class GeneralItem(
 
     constructor(keyword: String, action: Action, desc: String):
             this(keyword = keyword, action = action, title = keyword, desc = desc)
+
+    fun toDynamicItem(replacer: String): GeneralItem {
+        return GeneralItem(
+            keyword = keyword.replace("{}", replacer),
+            title = title.replace("{}", replacer),
+            desc = desc?.replace("{}", replacer),
+            action = action.toDynamicAction(replacer),
+            category = category
+        )
+    }
 }
 
 

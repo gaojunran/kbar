@@ -15,7 +15,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -29,7 +28,6 @@ import gaojunran.kbar.MyStyles.Companion.getMonoFontFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import java.awt.Window
 
 
 @Composable
@@ -50,11 +48,23 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
         )
         val executeThisCommandItem = GeneralItem(
             "[Execute this command]",
-            Action.ExecuteCommand(command = "", commandState = fieldText)
+            Action.ExecuteCommand(command = "{}", commandState = fieldText)
         )
+        val evalInPythonItem = GeneralItem(
+            "[Evaluate in Python]",
+            Action.RunPythonScript(path = "script/calculation.py {}", pathState = fieldText)
+        )
+
+//        val searchThisWordItem = GeneralItem(
+//            "[Search this word]",
+//
+//        )
 
         // Running only once at the beginning
         LaunchedEffect(Unit) {
+            // request focus to text field
+            focusRequester.requestFocus()
+
             // init the connection to sqlite
             initSqlite()
 
@@ -69,19 +79,23 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
                 }
                 fieldText.value = ""
             }
-            registerKeys(loadConfigList("../config/hotKeyConfig.json"))
+            registerKeys(loadConfigList("config/hotKeyConfig.json"))
 
-            // request focus to text field
-            focusRequester.requestFocus()
-
+            // load configs to sqlite
+            clearTable()
+            insertBatch(loadConfigList<NormalConfig>("config/normalConfig.json").map { it.toGeneralItem() })
         }
 
         LaunchedEffect(fieldText.value){
             // putting searching action into LaunchedEffect to avoid stuffing mainThread
             matchResult.clear()
-            matchResult.addAll(search(fieldText.value))
-            matchResult.add(executeThisCommandItem)
-            matchResult.add(debugThisItem)
+            if (fieldText.value.isNotBlank()) {
+                matchResult.addAll(
+                    searchDynamic(fieldText.value)
+                )
+                matchResult.add(executeThisCommandItem)
+                matchResult.add(debugThisItem)
+            }
         }
 
         Box(
@@ -200,7 +214,7 @@ fun MainSearchResultItem(
         backgroundColor = bgColor
     ) {
         Text(
-            item.keyword, style = MaterialTheme.typography.h4,
+            item.title, style = MaterialTheme.typography.h4,
             modifier = Modifier.padding(16.dp),
             color = txtColor,
             fontFamily = getMonoFontFamily()

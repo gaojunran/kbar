@@ -1,8 +1,10 @@
 package gaojunran.kbar
 
-enum class Category(val value: Int) {
+enum class Category(val value: Int, val prefix: String? = null) {
     None(0),
-    Api(1);
+    Normal(1),
+//    Eval(2),
+    Api(2);
 
     companion object {
         fun fromTable(value: Int): Category {

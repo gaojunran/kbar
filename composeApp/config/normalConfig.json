@@ -1,0 +1,6 @@
+[{
+  "keyword": "eval {}",
+  "title": "[Evaluate {} with Python]",
+  "type": "python",
+  "content": "script/calculation.py {}"
+}]

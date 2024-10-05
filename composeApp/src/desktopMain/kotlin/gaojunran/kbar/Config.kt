@@ -6,6 +6,46 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 /**
+ * Define keywords and actions to use in the bar.
+ */
+@Serializable
+data class NormalConfig(
+    /**
+     * The keyword to be searched.
+     * Moreover, you can include `{}` in `keyword` to enable pattern matching.
+     * The value being captured will replace all brackets in `content` while searching.
+     */
+    val keyword: String,
+    /**
+     * If `title` is not passed, it will be the same as `keyword`.
+     */
+    val title: String? = null,
+    val desc: String? = null,
+    /**
+     * See how to pass `type` in [Action].
+     */
+    val type: String,
+    /**
+     * How to work with `content` depends on `type`.
+     * For example, if `type` is "browse", then `content` should be a URL.
+     * See more in [Action].
+     * Including `{}` to enable pattern matching is available. See more in [keyword].
+     */
+    val content: String
+){
+    fun toGeneralItem(): GeneralItem {
+        return GeneralItem(
+            keyword = keyword,
+            title = title ?: keyword,
+            desc = desc,
+            action = Action.fromConfig(type, content),
+            category = Category.Normal
+        )
+    }
+}
+
+
+/**
  * Accept configuration to fetch data from APIs and display on the bar.
  * We only allow apis with GET-method request, JSON-format response and Authorization header(optional).
  * Template format: Use `{}` to surround JSON Path.
@@ -53,6 +93,9 @@ data class HotkeyConfig(
      * Instead, it's only necessary when you need to explicitly explain what the hotkey is meant for.
      */
     val title: String? = null,
+    /**
+     * See how to pass `type` and `content` in [NormalConfig].
+     */
     val type: String,
     val content: String
 )

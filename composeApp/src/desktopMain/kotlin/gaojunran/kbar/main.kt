@@ -40,13 +40,6 @@ fun main() = application {
     ) {
 
         App(isVisible, focusRequester)
-
-//        LaunchedEffect(Unit){
-//            registerKeyLambda("alt SPACE") {
-//                isVisible.value = !isVisible.value
-//                focusRequester.requestFocus()
-//            }
-//        }
     }
 }
 
