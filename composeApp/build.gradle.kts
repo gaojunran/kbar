@@ -46,8 +46,14 @@ kotlin {
 
 
 compose.desktop {
+
     application {
         mainClass = "gaojunran.kbar.MainKt"
+
+        // Thank you: https://github.com/JetBrains/compose-multiplatform/issues/3818
+        buildTypes.release.proguard {
+            version.set("7.6.0") // Or 7.5.0 when it's published for compatibility with Kotlin 2.0.0
+        }
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.AppImage)
