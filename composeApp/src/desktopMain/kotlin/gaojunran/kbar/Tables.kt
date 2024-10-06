@@ -11,3 +11,8 @@ object GeneralMatch : Table("general_match") {
     val type = integer("type")
     val content = text("content")
 }
+
+object Settings : Table("kbar_settings") {
+    val key = text("key")
+    val value = text("value")
+}

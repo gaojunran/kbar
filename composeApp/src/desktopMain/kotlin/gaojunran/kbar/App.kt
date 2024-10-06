@@ -27,6 +27,8 @@ import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberDialogState
 import gaojunran.kbar.MyStyles.Companion.getMonoFontFamily
+import gaojunran.kbar.MyStyles.Companion.textDescColor
+import gaojunran.kbar.MyStyles.Companion.textTitleColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -43,10 +45,24 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
 
     if (isDialogOpen) {
         DialogWindow(
+            undecorated = true,
+            transparent = true,
             onCloseRequest = { isDialogOpen = false },
-            state = rememberDialogState(position = WindowPosition(Alignment.Center)),
+            state = rememberDialogState(position = WindowPosition(Alignment.Center), width = 400.dp, height = 400.dp),
+            onPreviewKeyEvent = {
+                when {
+                    it.key == Key.Enter && it.type == KeyEventType.KeyDown -> {
+                        isDialogOpen = false
+                        return@DialogWindow true
+                    }
+
+                    else -> return@DialogWindow false
+                }
+            }
         ) {
-            Text("Debug")
+            Box(modifier = Modifier.background(color = MyStyles.surColor, shape = RoundedCornerShape(16.dp)).fillMaxSize()){
+                Text("Debug", color = Color.White)
+            }
         }
     }
 
@@ -56,7 +72,7 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
         val debugThisItem = GeneralItem(
             "[Debug]",
             Action.Lambda {
-                isVisible.value = !isVisible.value
+                isDialogOpen = !isDialogOpen
             },
         )
 
@@ -193,7 +209,6 @@ fun MainSearchResultItem(
     index: Int,
 ) {
     val bgColor by animateColorAsState(if (cursor.value == index) MaterialTheme.colors.primary else MyStyles.surColor)
-    val txtColor by animateColorAsState(if (cursor.value == index) Color.White else Color.White)
     Card(modifier = Modifier
         .clip(RoundedCornerShape(16.dp))
         .fillMaxWidth()
@@ -202,11 +217,20 @@ fun MainSearchResultItem(
         .onPointerEvent(PointerEventType.Exit) { },
         backgroundColor = bgColor
     ) {
-        Text(
-            item.title, style = MaterialTheme.typography.h4,
-            modifier = Modifier.padding(16.dp),
-            color = txtColor,
-            fontFamily = getMonoFontFamily()
-        )
+        Row(horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                item.title, style = MaterialTheme.typography.h4,
+                modifier = Modifier.padding(16.dp),
+                color = textTitleColor,
+                fontFamily = getMonoFontFamily()
+            )
+            Text(
+                item.desc ?: "", style = MaterialTheme.typography.h5,
+                modifier = Modifier.padding(16.dp),
+                color = textDescColor,
+                fontFamily = getMonoFontFamily()
+            )
+        }
+
     }
 }

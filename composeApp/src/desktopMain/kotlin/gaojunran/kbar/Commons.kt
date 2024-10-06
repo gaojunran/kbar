@@ -14,7 +14,8 @@ class MyStyles {
     companion object {
         val textFieldColor = Color(0xff1d1d1d)
         val surColor = Color(0xff262626)
-
+        val textTitleColor = Color(0xffffffff)
+        val textDescColor = Color(0x80ffffff)
 
         @Composable
         fun getMonoFontFamily(): FontFamily {

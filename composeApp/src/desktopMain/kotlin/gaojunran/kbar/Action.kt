@@ -14,7 +14,6 @@ import javax.swing.KeyStroke
 
 sealed class Action(
     var content: String,
-    private val contentState: MutableState<String>? = null,
     val typeValue: Int,
     val typeName: String
 ) {
@@ -68,7 +67,7 @@ sealed class Action(
         return this
     }
 
-    class BrowseUrl(url: String, urlState: MutableState<String>? = null) : Action(url, urlState, 1, "browse") {
+    class BrowseUrl(url: String) : Action(url, 1, "browse") {
         companion object {
             val desktop: Desktop = Desktop.getDesktop()
         }
@@ -79,9 +78,8 @@ sealed class Action(
 
     }
 
-    class ExecuteCommand(command: String, commandState: MutableState<String>? = null,
-                         private val isDisplayDialog: Boolean = true) :
-        Action(command, commandState, 2, "command") {
+    class ExecuteCommand(command: String, private val isDisplayDialog: Boolean = true) :
+        Action(command, 2, "command") {
         override fun actionInvoke() {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
@@ -97,22 +95,22 @@ sealed class Action(
         }
     }
 
-    class OpenFile(path: String, pathState: MutableState<String>? = null) : Action(path, pathState, 3, "file") {
+    class OpenFile(path: String) : Action(path, 3, "file") {
         override fun actionInvoke() {
             TODO("Not yet implemented")
         }
 
     }
 
-    class OpenFolder(path: String, pathState: MutableState<String>? = null) : Action(path, pathState, 4, "folder") {
+    class OpenFolder(path: String) : Action(path, 4, "folder") {
         override fun actionInvoke() {
             TODO("Not yet implemented")
         }
 
     }
 
-    class PutToClipboard(text: String, textState: MutableState<String>? = null) :
-        Action(text, textState, 5, "clipboard") {
+    class PutToClipboard(text: String) :
+        Action(text, 5, "clipboard") {
         companion object {
             val clipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
         }
@@ -127,8 +125,8 @@ sealed class Action(
     /**
      *
      */
-    class RunPythonScript(path: String, pathState: MutableState<String>? = null) :
-        Action(path, pathState, 6, "python") {
+    class RunPythonScript(path: String) :
+        Action(path, 6, "python") {
         override fun actionInvoke() {
             ExecuteCommand("python3 $content").actionInvoke()
         }
@@ -138,9 +136,8 @@ sealed class Action(
 
     class SendHotkey(
         hotkey: String,
-        hotkeyState: MutableState<String>? = null,
-        private val isVisible: MutableState<Boolean>? = null  // only pass when you need to hide the window
-    ) : Action(hotkey, hotkeyState, 7, "hotkey") {
+        private val isVisible: MutableState<Boolean>? = null  // only pass when you need to hide the window){}
+    ) : Action(hotkey, 7, "hotkey") {
 
         companion object {
             val robot = Robot()
@@ -184,14 +181,14 @@ sealed class Action(
         }
     }
 
-    class Debug(message: String, messageState: MutableState<String>? = null) :
-        Action(message, messageState, -1, "debug") {
+    class Debug(message: String) :
+        Action(message, -1, "debug") {
         override fun actionInvoke() {
             content.displayInDialog("Debugging...", isMultipleLine = true)
         }
     }
 
-    class Lambda(val action: () -> Unit) : Action("", null, 0, "lambda") {
+    class Lambda(val action: () -> Unit) : Action("", 0, "lambda") {
         override fun actionInvoke() {
             action()
         }

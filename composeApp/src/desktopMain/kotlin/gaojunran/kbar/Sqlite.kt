@@ -1,6 +1,7 @@
 package gaojunran.kbar
 
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun initSqlite() {
@@ -13,11 +14,6 @@ fun initSqlite() {
     Database.connect("jdbc:sqlite:data/items.db", "org.sqlite.JDBC")
 }
 
-fun main() {
-    initSqlite()
-    val generalItems = searchDynamic("ke")
-    println(generalItems)
-}
 
 fun insertSingle(generalItem: GeneralItem) = transaction {
     GeneralMatch.insert {
@@ -73,4 +69,18 @@ fun searchDynamic(keyword: String): List<GeneralItem> {
 
 fun clearTable() = transaction {
     GeneralMatch.deleteAll()
+}
+
+fun getSetting(key: String): String? {
+    return transaction {
+        Settings.select(Settings.value).where { Settings.key eq key }.map {
+            it[Settings.value]
+        }.getOrNull(0)
+    }
+}
+
+fun setSetting(key: String, value: String) = transaction {
+    Settings.update({ Settings.key eq key }) {
+        it[Settings.value] = value
+    }
 }

@@ -9,7 +9,7 @@ import java.net.URI
 import java.net.URL
 import javax.imageio.ImageIO
 
-val tray = SystemTray.getSystemTray()
+val tray: SystemTray = SystemTray.getSystemTray()
 
 fun sendNotification(title: String, content: String) {
 
@@ -19,6 +19,8 @@ fun sendNotification(title: String, content: String) {
 //        println(System.getProperty("user.dir"))
         val icon = ImageIO.read(File("/home/nebula/Projects/kbar/composeApp/src/desktopMain/kotlin/gaojunran/kbar/resources/img.png"))
         val trayIcon = TrayIcon(icon, "NotificationHelper")
+        trayIcon.isImageAutoSize = true
+        trayIcon.setImageAutoSize(true)
         tray.add(trayIcon)
         trayIcon.displayMessage(title, content, TrayIcon.MessageType.ERROR)
     } catch (e: Exception) {
