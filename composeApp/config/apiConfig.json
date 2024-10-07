@@ -6,7 +6,7 @@
       "key": "40a9455cbcdd44578ffc909af0bffcec",
       "location": "101044000"
     },
-    "title": "{$.daily[*].tempMax} | {$.daily[*].tempMin} | {$.daily[*].textDay} | {$.daily[*].textNight}",
+    "title": "{$.daily[*].tempMin}/{$.daily[*].tempMax}°C | {$.daily[*].textDay}/{$.daily[*].textNight}",
     "desc": "{$.daily[*].fxDate}",
     "allowMultipleItems": true
   }

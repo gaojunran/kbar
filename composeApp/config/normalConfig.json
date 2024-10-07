@@ -10,6 +10,7 @@
     "keyword": "{}",
     "title": "[Execute this command]",
     "type": "command",
-    "content": "{}"
+    "content": "{}",
+    "order": -1
   }
 ]

@@ -31,7 +31,12 @@ data class NormalConfig(
      * See more in [Action].
      * Including `{}` to enable pattern matching is available. See more in [keyword].
      */
-    val content: String
+    val content: String,
+    /**
+     * The order of the item in the bar list. The items are ranked in Descending order and have a default `order` 0.
+     * So if you want this item to be nearer to the top, set a positive number.
+     */
+    val order: Int = 0
 ){
     fun toGeneralItem(): GeneralItem {
         return GeneralItem(
@@ -39,7 +44,8 @@ data class NormalConfig(
             title = title ?: keyword,
             desc = desc,
             action = Action.fromConfig(type, content),
-            category = Category.Normal
+            category = Category.Normal,
+            order = order
         )
     }
 }

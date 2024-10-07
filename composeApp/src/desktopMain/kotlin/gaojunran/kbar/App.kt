@@ -1,13 +1,12 @@
 package gaojunran.kbar
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -23,6 +22,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberDialogState
@@ -37,45 +37,22 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
-    var isDialogOpen by remember { mutableStateOf(false) }
+    val isDialogOpen = remember { mutableStateOf(false) }
     val matchResult = remember { mutableListOf<GeneralItem>().toMutableStateList() }
     val cursor = remember { mutableStateOf(0) }
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
-
-    if (isDialogOpen) {
-        DialogWindow(
-            undecorated = true,
-            transparent = true,
-            onCloseRequest = { isDialogOpen = false },
-            state = rememberDialogState(position = WindowPosition(Alignment.Center), width = 400.dp, height = 400.dp),
-            onPreviewKeyEvent = {
-                when {
-                    it.key == Key.Enter && it.type == KeyEventType.KeyDown -> {
-                        isDialogOpen = false
-                        return@DialogWindow true
-                    }
-
-                    else -> return@DialogWindow false
-                }
-            }
-        ) {
-            Box(
-                modifier = Modifier.background(color = MyStyles.surColor, shape = RoundedCornerShape(16.dp))
-                    .fillMaxSize()
-            ) {
-                Text("Debug", color = Color.White)
-            }
-        }
+    val displayMessage = remember { mutableStateOf("") }
+    if (isDialogOpen.value) {
+        DisplayWindow(isDialogOpen)
     }
-
 
     MaterialTheme {
         val fieldText = remember { mutableStateOf("") }
         val debugThisItem = GeneralItem(
             "[Debug]",
             Action.Lambda {
-                isDialogOpen = !isDialogOpen
+                isDialogOpen.value = !isDialogOpen.value
             },
         )
 
@@ -103,16 +80,18 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
             // load configs to sqlite
             clearTable()
             insertBatch(loadConfigList<NormalConfig>("config/normalConfig.json").map { it.toGeneralItem() })
-            insertBatch(loadConfigList<ApiConfig>("config/apiConfig.json").map {
+            val debug = loadConfigList<ApiConfig>("config/apiConfig.json").map {
                 val responseBody = fetchData(it)
+                println(responseBody)
                 val apiResult = ApiResult(
                     title = parseTemplate(responseBody, it.title, it),
                     desc = parseTemplate(responseBody, it.desc, it),
                     actionURL = parseTemplate(responseBody, it.actionURL, it)
                 )
-                println(apiResult)
                 apiResult.toGeneralItemList(keyword = it.keyword)
-            }.flatten())
+            }.flatten()
+            println(debug)
+            insertBatch(debug)
         }
 
         LaunchedEffect(fieldText.value) {
@@ -245,5 +224,34 @@ fun MainSearchResultItem(
             )
         }
 
+    }
+}
+
+@Composable
+fun DisplayWindow(isDialogOpen: MutableState<Boolean>) {
+    DialogWindow(
+        undecorated = true,
+        transparent = true,
+        onCloseRequest = { isDialogOpen.value = false },
+        state = rememberDialogState(position = WindowPosition(Alignment.Center), width = 600.dp, height = 400.dp),
+        onPreviewKeyEvent = {
+            when {
+                it.key == Key.Enter && it.type == KeyEventType.KeyDown -> {
+                    isDialogOpen.value = false
+                    return@DialogWindow true
+                }
+
+                else -> return@DialogWindow false
+            }
+        }
+    ) {
+        Box(
+            modifier = Modifier.background(color = MyStyles.surColor, shape = RoundedCornerShape(16.dp))
+                .padding(64.dp).fillMaxSize()
+        ) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()) {
+                Text("123", color = Color.White, fontFamily = getMonoFontFamily(), fontSize = 24.sp)
+            }
+        }
     }
 }

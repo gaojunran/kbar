@@ -10,6 +10,7 @@ object GeneralMatch : Table("general_match") {
     val desc = text("desc")
     val type = integer("type")
     val content = text("content")
+    val order = integer("order")
 }
 
 object Settings : Table("kbar_settings") {

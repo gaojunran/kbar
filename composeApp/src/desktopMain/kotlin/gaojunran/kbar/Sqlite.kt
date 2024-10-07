@@ -23,6 +23,7 @@ fun insertSingle(generalItem: GeneralItem) = transaction {
         it[category] = generalItem.category.value
         it[type] = generalItem.action.typeValue
         it[content] = generalItem.action.content
+        it[order] = generalItem.order
     } get GeneralMatch.id
 }
 
@@ -34,6 +35,7 @@ fun insertBatch(generalItems: List<GeneralItem>) = transaction {
         this[GeneralMatch.category] = it.category.value
         this[GeneralMatch.type] = it.action.typeValue
         this[GeneralMatch.content] = it.action.content
+        this[GeneralMatch.order] = it.order
     }
 }
 
@@ -48,7 +50,7 @@ fun searchDynamic(keyword: String): List<GeneralItem> {
                 infix fun <T : String?> Expression<T>.like(expression: ExpressionWithColumnType<String>): LikeEscapeOp = LikeEscapeOp(this, expression, true, null)
              */
             stringParam(keyword) like patternColumn
-        }.limit(30).map {
+        }.limit(30).sortedByDescending { it[GeneralMatch.order] }.map {
             /* `replacer` depends on different patterns, so it's mutually different.
                `it[GeneralMatch.keyword]`  :: eval {}
                `keyword`                   :: eval 1+1
