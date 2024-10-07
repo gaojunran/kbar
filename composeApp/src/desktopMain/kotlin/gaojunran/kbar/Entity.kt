@@ -5,12 +5,14 @@ data class ApiResult(
     val desc: List<String>,
     val actionURL: List<String>
 ) {
-    fun toGeneralItemList(): List<GeneralItem> {
+    fun toGeneralItemList(keyword: String): List<GeneralItem> {
+//        println("Debug...")
         return title.zip(desc).zip(actionURL).map {
             GeneralItem(
-                keyword = it.first.first,
+                keyword = keyword,
+                title = it.first.first,
                 desc = it.first.second,
-                action = Action.BrowseUrl(it.second)
+                action = Action.BrowseUrl(it.second),
             )
         }
     }

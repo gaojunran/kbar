@@ -54,6 +54,7 @@ data class NormalConfig(
  */
 @Serializable
 data class ApiConfig(
+    val keyword: String,
     val baseUrl: String,
     val parameters: Map<String, String>? = null,
     val title: String,   // pass a template

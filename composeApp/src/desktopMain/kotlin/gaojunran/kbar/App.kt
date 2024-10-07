@@ -60,7 +60,10 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
                 }
             }
         ) {
-            Box(modifier = Modifier.background(color = MyStyles.surColor, shape = RoundedCornerShape(16.dp)).fillMaxSize()){
+            Box(
+                modifier = Modifier.background(color = MyStyles.surColor, shape = RoundedCornerShape(16.dp))
+                    .fillMaxSize()
+            ) {
                 Text("Debug", color = Color.White)
             }
         }
@@ -100,6 +103,16 @@ fun App(isVisible: MutableState<Boolean>, focusRequester: FocusRequester) {
             // load configs to sqlite
             clearTable()
             insertBatch(loadConfigList<NormalConfig>("config/normalConfig.json").map { it.toGeneralItem() })
+            insertBatch(loadConfigList<ApiConfig>("config/apiConfig.json").map {
+                val responseBody = fetchData(it)
+                val apiResult = ApiResult(
+                    title = parseTemplate(responseBody, it.title, it),
+                    desc = parseTemplate(responseBody, it.desc, it),
+                    actionURL = parseTemplate(responseBody, it.actionURL, it)
+                )
+                println(apiResult)
+                apiResult.toGeneralItemList(keyword = it.keyword)
+            }.flatten())
         }
 
         LaunchedEffect(fieldText.value) {

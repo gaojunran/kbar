@@ -8,6 +8,18 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 
 
+fun <T> List<List<T>>.transpose(): List<List<T>> {
+    if (isEmpty()) return emptyList()
+    val numRows = size
+    val numCols = this[0].size
+    return List(numCols) { colIndex ->
+        List(numRows) { rowIndex ->
+            this[rowIndex][colIndex]
+        }
+    }
+}
+
+
 suspend fun fetchData(apiConfig: ApiConfig): String {
     val client = HttpClient(CIO) {
         install(ContentEncoding) {
@@ -43,26 +55,14 @@ fun parseTemplate(responseBody: String, template: String?, apiConfig: ApiConfig)
                 counter++
                 "{${counter - 1}}"
             }
-            matchResults.forEach { item ->
+            matchResults.transpose().forEach { item ->  // each item, contains slot values
                 var currResult = resultTemplate
                 item.forEachIndexed { index, slotItem ->
-                    currResult = resultTemplate.replace("{${index}}", slotItem)
+                    currResult = currResult.replace("{${index}}", slotItem)
                 }
                 resultList.add(currResult)
             }
         }
     }
     return resultList
-}
-
-
-suspend fun main() {
-    val apiConfig: List<ApiConfig> = loadConfigList("/home/nebula/Projects/kbar/config/apiConfig.json")
-    val generalItemList = apiConfig.map {
-        val responseBody = fetchData(it)
-        val titleList = parseTemplate(responseBody, it.title, it)
-        val descList = parseTemplate(responseBody, it.desc, it)
-        val actionURLList = parseTemplate(responseBody, it.actionURL, it)
-        ApiResult(titleList, descList, actionURLList).toGeneralItemList()
-    }.flatten()
 }
