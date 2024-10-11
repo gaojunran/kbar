@@ -1,14 +1,16 @@
 package gaojunran.kbar
 
-import androidx.compose.runtime.MutableState
-import kotlinx.coroutines.CoroutineScope
+import gaojunran.kbar.States.Companion.isVisible
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import java.awt.Desktop
 import java.awt.Robot
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.StringSelection
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.net.URI
 import javax.swing.KeyStroke
 
@@ -30,7 +32,7 @@ sealed class Action(
                 "hotkey" -> SendHotkey(content)
                 "debug" -> Debug(content)
                 else -> Lambda {
-                    content.displayInDialog("Unknown Action Type $type")
+//                    content.displayInDialog("Unknown Action Type $type")
                 }
             }
         }
@@ -43,10 +45,10 @@ sealed class Action(
                 4 -> OpenFolder(content)
                 5 -> PutToClipboard(content)
                 6 -> RunPythonScript(content)
-//                7 -> SendHotkey(content)
+                7 -> SendHotkey(content)
                 -1 -> Debug(content)
                 else -> Lambda {
-                    content.displayInDialog("Unknown Action Type $type")
+//                    content.displayInDialog("Unknown Action Type $type")
                 }
             }
         }
@@ -54,8 +56,8 @@ sealed class Action(
 
     }
 
-    abstract fun actionInvoke()
-    fun invoke() {
+    abstract suspend fun actionInvoke()
+    suspend fun invoke() {
 //        content = contentState?.value?.let {
 //            content.replace("{}", it)
 //        } ?: content
@@ -72,38 +74,28 @@ sealed class Action(
             val desktop: Desktop = Desktop.getDesktop()
         }
 
-        override fun actionInvoke() {
+        override suspend fun actionInvoke() {
             desktop.browse(URI(content))
         }
 
     }
 
-    class ExecuteCommand(command: String, private val isDisplayDialog: Boolean = true) :
+    class ExecuteCommand(command: String) :
         Action(command, 2, "command") {
-        override fun actionInvoke() {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    Runtime.getRuntime().exec(content.split(" ").toTypedArray<String>()).apply {
-                        val output = inputStream.bufferedReader().readText() + "\n" + errorStream.bufferedReader().readText()
-                        waitFor()
-                        if (isDisplayDialog) output.displayInDialog(isMultipleLine = true)
-                    }
-                } catch (e: Exception) {
-                    "Error executing command: ${e.message}".displayInDialog(isMultipleLine = true)
-                }
-            }
+        override suspend fun actionInvoke() {
+            executeCommandOutput(content).displayInDialog()
         }
     }
 
     class OpenFile(path: String) : Action(path, 3, "file") {
-        override fun actionInvoke() {
+        override suspend fun actionInvoke() {
             TODO("Not yet implemented")
         }
 
     }
 
     class OpenFolder(path: String) : Action(path, 4, "folder") {
-        override fun actionInvoke() {
+        override suspend fun actionInvoke() {
             TODO("Not yet implemented")
         }
 
@@ -115,7 +107,7 @@ sealed class Action(
             val clipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
         }
 
-        override fun actionInvoke() {
+        override suspend fun actionInvoke() {
             val selection = StringSelection(content)
             clipboard.setContents(selection, null)
         }
@@ -127,25 +119,23 @@ sealed class Action(
      */
     class RunPythonScript(path: String) :
         Action(path, 6, "python") {
-        override fun actionInvoke() {
+        override suspend fun actionInvoke() {
             ExecuteCommand("python3 $content").actionInvoke()
         }
     }
 
 
-
     class SendHotkey(
         hotkey: String,
-        private val isVisible: MutableState<Boolean>? = null  // only pass when you need to hide the window){}
     ) : Action(hotkey, 7, "hotkey") {
 
         companion object {
             val robot = Robot()
         }
 
-        override fun actionInvoke() {
+        override suspend fun actionInvoke() {
 
-            isVisible?.let { it.value = false }
+            isVisible = false
 
             val hotkey = KeyStroke.getKeyStroke(content)
             val keyCode = hotkey.keyCode
@@ -183,16 +173,62 @@ sealed class Action(
 
     class Debug(message: String) :
         Action(message, -1, "debug") {
-        override fun actionInvoke() {
-            content.displayInDialog("Debugging...", isMultipleLine = true)
+        override suspend fun actionInvoke() {
+            content.displayInDialog()
         }
     }
 
     class Lambda(val action: () -> Unit) : Action("", 0, "lambda") {
-        override fun actionInvoke() {
+        override suspend fun actionInvoke() {
             action()
         }
     }
+}
 
 
+fun String.replaceANSI(): String {
+    return this.replace("\u001B\\[[;\\d]*m".toRegex(), "")
+}
+
+fun executeCommand(command: String): Process {
+    return ProcessBuilder(*command.split(" ").toTypedArray()).redirectErrorStream(true).start()
+}
+
+fun executeCommandStream(command: String) {
+}
+
+suspend fun executeCommandOutput(command: String, maxLines: Int = 100): String = coroutineScope {
+    try {
+        val process: Process = executeCommand(command)
+        val output = StringBuilder()
+        val error = StringBuilder()
+
+        // Read output stream
+        withContext(Dispatchers.IO) {
+            BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+                var line: String? = reader.readLine()
+                var counter = 0
+                while (line != null && counter < maxLines) {
+                    output.append(line).append("\n")
+                    line = reader.readLine()
+                    counter++
+                }
+            }
+        }
+
+        // Read error stream
+        withContext(Dispatchers.IO) {
+            BufferedReader(InputStreamReader(process.errorStream)).use { reader ->
+                var line: String? = reader.readLine()
+                while (line != null) {
+                    error.append(line).append("\n")
+                    line = reader.readLine()
+                }
+            }
+        }
+        process.waitFor()
+        (output.toString() + "\n" + error.toString()).replaceANSI()
+    } catch (e: Exception) {
+        "Error executing command: ${e.message}".replaceANSI()
+    }
 }

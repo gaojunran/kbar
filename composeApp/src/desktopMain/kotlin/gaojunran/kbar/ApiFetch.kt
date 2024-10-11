@@ -6,6 +6,7 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.compression.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.*
 
 
 fun <T> List<List<T>>.transpose(): List<List<T>> {
@@ -36,11 +37,13 @@ suspend fun fetchData(apiConfig: ApiConfig): String {
     return response.bodyAsText()
 }
 
+
+
 fun parseTemplate(responseBody: String, template: String?, apiConfig: ApiConfig): List<String> {
     val regex = "\\{(.*?)\\}".toRegex()
     val resultList = mutableListOf<String>()
     template?.let {
-        if (!apiConfig.allowMultipleItems) {
+        if (apiConfig.maxItemCount == 1) {
             val resultSingle = regex.replace(it) { matchResult ->
                 val content = matchResult.groupValues[1]
                 JsonPath.read<String>(responseBody, content)
@@ -55,7 +58,7 @@ fun parseTemplate(responseBody: String, template: String?, apiConfig: ApiConfig)
                 counter++
                 "{${counter - 1}}"
             }
-            matchResults.transpose().forEach { item ->  // each item, contains slot values
+            matchResults.transpose().slice(0..<apiConfig.maxItemCount).forEach { item ->  // each item, contains slot values
                 var currResult = resultTemplate
                 item.forEachIndexed { index, slotItem ->
                     currResult = currResult.replace("{${index}}", slotItem)

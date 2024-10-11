@@ -1,6 +1,6 @@
 package gaojunran.kbar
 
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 
 import androidx.compose.ui.text.font.FontFamily
@@ -26,8 +26,16 @@ class MyStyles {
     }
 }
 
-class MyKeys{
-    companion object{
+class MyKeys {
+    companion object {
         const val ALT_SPACE = "alt SPACE"
+    }
+}
+
+class States {
+    companion object {
+        var isDialogDisplay by mutableStateOf(false)
+        var displayMessage by mutableStateOf("")
+        var isVisible  by mutableStateOf(true)
     }
 }

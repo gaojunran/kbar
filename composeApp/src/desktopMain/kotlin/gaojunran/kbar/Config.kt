@@ -66,12 +66,17 @@ data class ApiConfig(
     val title: String,   // pass a template
     val desc: String? = null,    // pass a template
     val actionURL: String? = null,  // pass a template, when the item is clicked, it'll be opened.
-    val allowMultipleItems: Boolean = true,
-    // If `allowMultipleItems` is true, all the results guided by JSON Path will be displayed.
-    // Otherwise, only the first result will be displayed.
+    /**
+     * The maximum number of items to be displayed.
+     * If your JSON Path returns a value instead of a list, provide 1 for `maxItemCount`.
+     */
+    val maxItemCount: Int = 10,
+    /**
+     * If `authToken` is provided, the following sentence will be added to the request header:
+     * Authorization: <auth>
+     */
     val auth: String? = null,
-    // If `authToken` is provided, the following sentence will be added to the request header:
-    // Authorization: <auth>
+
 )
 
 

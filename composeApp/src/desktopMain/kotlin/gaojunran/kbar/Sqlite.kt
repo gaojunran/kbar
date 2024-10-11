@@ -1,8 +1,11 @@
 package gaojunran.kbar
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.reflect.KProperty
 
 fun initSqlite() {
     try {
@@ -50,24 +53,25 @@ fun searchDynamic(keyword: String): List<GeneralItem> {
                 infix fun <T : String?> Expression<T>.like(expression: ExpressionWithColumnType<String>): LikeEscapeOp = LikeEscapeOp(this, expression, true, null)
              */
             stringParam(keyword) like patternColumn
-        }.limit(30).sortedByDescending { it[GeneralMatch.order] }.map {
+        }.limit(30).sortedByDescending { it[GeneralMatch.order] }.map { row ->
             /* `replacer` depends on different patterns, so it's mutually different.
                `it[GeneralMatch.keyword]`  :: eval {}
                `keyword`                   :: eval 1+1
                `replacer` should get       :: 1+1
              */
-            val prefix = it[GeneralMatch.keyword].replace("{}", "")
+            val prefix = row[GeneralMatch.keyword].replace("{}", "")
             val replacer = keyword.replace(prefix, "")
             GeneralItem(
-                keyword = it[GeneralMatch.keyword],
-                title = it[GeneralMatch.title],
-                desc = it[GeneralMatch.desc],
-                category = Category.fromTable(it[GeneralMatch.category]),
-                action = Action.fromTable(it[GeneralMatch.type], it[GeneralMatch.content])
+                keyword = row[GeneralMatch.keyword],
+                title = row[GeneralMatch.title],
+                desc = row[GeneralMatch.desc],
+                category = Category.fromTable(row[GeneralMatch.category]),
+                action = Action.fromTable(row[GeneralMatch.type], row[GeneralMatch.content])
             ).toDynamicItem(replacer)
         }
     }
 }
+
 
 fun clearTable() = transaction {
     GeneralMatch.deleteAll()
@@ -84,5 +88,15 @@ fun getSetting(key: String): String? {
 fun setSetting(key: String, value: String) = transaction {
     Settings.update({ Settings.key eq key }) {
         it[Settings.value] = value
+    }
+}
+
+class DelegateSetting(private val key: String) {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): MutableState<String> {
+        return mutableStateOf(getSetting(key) ?: "")
+    }
+
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: String) {
+        setSetting(key, value)
     }
 }

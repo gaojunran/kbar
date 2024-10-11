@@ -8,6 +8,6 @@
     },
     "title": "{$.daily[*].tempMin}/{$.daily[*].tempMax}°C | {$.daily[*].textDay}/{$.daily[*].textNight}",
     "desc": "{$.daily[*].fxDate}",
-    "allowMultipleItems": true
+    "maxItemCount": 7
   }
 ]

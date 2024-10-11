@@ -4,7 +4,9 @@ enum class Category(val value: Int, val prefix: String? = null) {
     None(0),
     Normal(1),
 //    Eval(2),
-    Api(2);
+    Api(2),
+    Find(3)
+;
 
     companion object {
         fun fromTable(value: Int): Category {
